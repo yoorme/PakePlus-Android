@@ -545,7 +545,6 @@
             }
             /* 儿童：尺寸由 JS 按原图比例设定；避免强 filter / 对比度算法导致发糊 */
             .draggable[data-type='kid'] {
-                z-index: 10000;
                 box-sizing: border-box;
                 filter: drop-shadow(0 2px 8px rgba(255, 105, 180, 0.2));
             }
@@ -557,10 +556,6 @@
             .draggable.selected {
                 outline: 3px solid #ff69b4;
                 outline-offset: 4px;
-                z-index: 20 !important;
-            }
-            .draggable[data-type='kid'].selected {
-                z-index: 10001 !important;
             }
             .img-spinner {
                 position: absolute;
@@ -783,23 +778,6 @@
                 width: 40px;
                 height: 40px;
                 border-radius: 8px;
-            }
-
-            #loadingStatus {
-                position: fixed;
-                bottom: 100px;
-                left: 50%;
-                transform: translateX(-50%);
-                background: linear-gradient(145deg, #ff69b4 0%, #ffb6c1 100%);
-                color: white;
-                padding: 12px 24px;
-                border-radius: 25px;
-                font-size: 14px;
-                z-index: 4000;
-                transition: opacity 0.3s;
-                pointer-events: none;
-                box-shadow: 0 8px 25px rgba(255, 105, 180, 0.4);
-                font-weight: 600;
             }
 
             /* 语音讲解区域 */
@@ -1169,12 +1147,12 @@
                         <button
                             type="button"
                             class="mat-btn"
-                            data-bg="grass"
-                            title="草地"
+                            data-bg="bg1"
+                            title="背景 1"
                         >
                             <img
-                                src="./public/images/草地.webp"
-                                alt="草地"
+                                src="./public/background/背景1.webp"
+                                alt="背景1"
                                 width="48"
                                 height="48"
                                 decoding="async"
@@ -1183,12 +1161,40 @@
                         <button
                             type="button"
                             class="mat-btn"
-                            data-bg="beach"
-                            title="海边"
+                            data-bg="bg2"
+                            title="背景 2"
                         >
                             <img
-                                src="./public/images/海边.webp"
-                                alt="海边"
+                                src="./public/background/背景2.webp"
+                                alt="背景2"
+                                width="48"
+                                height="48"
+                                decoding="async"
+                            />
+                        </button>
+                        <button
+                            type="button"
+                            class="mat-btn"
+                            data-bg="bg3"
+                            title="背景 3"
+                        >
+                            <img
+                                src="./public/background/背景3.webp"
+                                alt="背景3"
+                                width="48"
+                                height="48"
+                                decoding="async"
+                            />
+                        </button>
+                        <button
+                            type="button"
+                            class="mat-btn"
+                            data-bg="pic4"
+                            title="图片 4"
+                        >
+                            <img
+                                src="./public/background/图片4.webp"
+                                alt="图片4"
                                 width="48"
                                 height="48"
                                 decoding="async"
@@ -1213,8 +1219,6 @@
 
         <div id="customCursor"></div>
 
-        <div id="loadingStatus">✨ 加载素材中...</div>
-
         <script>
             ;(function () {
                 'use strict'
@@ -1226,20 +1230,29 @@
                 const ctx = drawCanvas.getContext('2d')
                 const bgCtx = bgCanvas.getContext('2d')
                 const cursorDiv = document.getElementById('customCursor')
-                const loadingStatus = document.getElementById('loadingStatus')
 
-                // 背景：默认奶油白（手绘纸纹）；可选草地 / 海边
+                // 背景：默认奶油白；其余为 public/background 下的图
                 const bgColors = {
                     cream: { type: 'color', value: '#FFF8F0', name: '奶油白' },
-                    grass: {
+                    bg1: {
                         type: 'image',
-                        value: './public/images/草地.webp',
-                        name: '草地',
+                        value: './public/background/背景1.webp',
+                        name: '背景1',
                     },
-                    beach: {
+                    bg2: {
                         type: 'image',
-                        value: './public/images/海边.webp',
-                        name: '海边',
+                        value: './public/background/背景2.webp',
+                        name: '背景2',
+                    },
+                    bg3: {
+                        type: 'image',
+                        value: './public/background/背景3.webp',
+                        name: '背景3',
+                    },
+                    pic4: {
+                        type: 'image',
+                        value: './public/background/图片4.webp',
+                        name: '图片4',
                     },
                 }
                 let currentBg = 'cream'
@@ -1288,86 +1301,13 @@
                     bindUI()
                 })
 
-                // ========== 图片内存缓存系统 ==========
-                const imageCache = new Map()
-                const imageUrls = [
-                    './images/21.webp',
-                    './images/551.webp',
-                    './images/222222-1.webp',
-                    './images/2266-1.webp',
-                    './images/image1.webp',
-                    './images/image2.webp',
-                    './images/h.webp',
-                    './images/1.webp',
-                    './images/88-1.webp',
-                    './images/8881.webp',
-                    './images/image3.webp',
-                    './images/2-1.webp',
-                    './images/luntai.webp',
-                    './images/222-1.webp',
-                ]
-                let imagesLoadedCount = 0
-                const totalImages = imageUrls.length
-
-                function updateLoadingStatus() {
-                    imagesLoadedCount++
-                    if (imagesLoadedCount >= totalImages) {
-                        loadingStatus.textContent = '✨ 素材加载完成！'
-                        setTimeout(() => {
-                            loadingStatus.style.opacity = '0'
-                        }, 400)
-                        setTimeout(() => {
-                            loadingStatus.style.display = 'none'
-                        }, 900)
-                    } else {
-                        loadingStatus.textContent = `✨ 加载素材中 (${imagesLoadedCount}/${totalImages})`
-                    }
-                }
-
-                function preloadImage(url) {
-                    return new Promise((resolve) => {
-                        if (imageCache.has(url)) {
-                            resolve(imageCache.get(url))
-                            return
-                        }
-                        const img = new Image()
-                        img.crossOrigin = 'anonymous'
-                        img.onload = () => {
-                            const info = {
-                                img,
-                                loaded: true,
-                                width: img.naturalWidth,
-                                height: img.naturalHeight,
-                            }
-                            imageCache.set(url, info)
-                            updateLoadingStatus()
-                            resolve(info)
-                        }
-                        img.onerror = () => {
-                            imageCache.set(url, {
-                                img,
-                                loaded: false,
-                                width: 0,
-                                height: 0,
-                            })
-                            updateLoadingStatus()
-                            resolve(imageCache.get(url))
-                        }
-                        img.src = url
-                    })
-                }
-
-                function preloadImages() {
-                    imageUrls.forEach((url) => preloadImage(url))
-                }
-                preloadImages()
-
                 // 绘制背景 - 手绘纸张效果
                 const bgImageCache = {}
 
                 function drawBackground() {
-                    const w = bgCanvas.width
-                    const h = bgCanvas.height
+                    const dpr = window.devicePixelRatio || 1
+                    const w = bgCanvas.width / dpr
+                    const h = bgCanvas.height / dpr
                     if (w <= 0 || h <= 0) return
 
                     const bg = bgColors[currentBg]
@@ -1378,19 +1318,17 @@
                     if (bg.type === 'image') {
                         const cached = bgImageCache[currentBg]
                         if (cached) {
-                            // 使用缓存的图片绘制并适应画布
                             const img = cached
-                            const scale = Math.max(
-                                w / img.width,
-                                h / img.height
-                            )
-                            const imgW = img.width * scale
-                            const imgH = img.height * scale
+                            const iw = img.naturalWidth || img.width || 1
+                            const ih = img.naturalHeight || img.height || 1
+                            // cover：宽高都铺满画布（等比缩放，超出由画布裁切）
+                            const scale = Math.max(w / iw, h / ih)
+                            const imgW = iw * scale
+                            const imgH = ih * scale
                             const x = (w - imgW) / 2
                             const y = (h - imgH) / 2
-                            bgCtx.drawImage(img, x, y, imgW, imgH)
+                            bgCtx.drawImage(img, 0, 0, iw, ih, x, y, imgW, imgH)
                         } else {
-                            // 图片未加载，使用渐变背景
                             bgCtx.fillStyle = '#87CEEB'
                             bgCtx.fillRect(0, 0, w, h)
                         }
@@ -1401,8 +1339,12 @@
                     bgCtx.fillStyle = bg.value
                     bgCtx.fillRect(0, 0, w, h)
 
-                    // 添加纸张纹理（噪点效果）
-                    const imageData = bgCtx.getImageData(0, 0, w, h)
+                    // 纹理与网格在设备像素位图上处理，避免与 scale(dpr) 错位
+                    bgCtx.save()
+                    bgCtx.setTransform(1, 0, 0, 1, 0, 0)
+                    const bw = bgCanvas.width
+                    const bh = bgCanvas.height
+                    const imageData = bgCtx.getImageData(0, 0, bw, bh)
                     const data = imageData.data
                     for (let i = 0; i < data.length; i += 4) {
                         const noise = (Math.random() - 0.5) * 15
@@ -1417,8 +1359,8 @@
                         )
                     }
                     bgCtx.putImageData(imageData, 0, 0)
+                    bgCtx.restore()
 
-                    // 添加手绘网格线效果
                     bgCtx.strokeStyle = 'rgba(180, 160, 140, 0.15)'
                     bgCtx.lineWidth = 0.5
 
@@ -1444,7 +1386,6 @@
                         bgCtx.stroke()
                     }
 
-                    // 添加淡淡的边缘阴影
                     const gradient = bgCtx.createRadialGradient(
                         w / 2,
                         h / 2,
@@ -1697,17 +1638,6 @@
                     div.style.position = 'absolute'
                     itemsLayer.appendChild(div)
 
-                    // 优先使用内存缓存中的尺寸信息，无需等待加载
-                    const cached = imageCache.get(imgUrl)
-                    if (cached && cached.loaded && type !== 'kid') {
-                        const targetSize = 300
-                        const w = cached.width
-                        const h = cached.height
-                        // 统一设置为500x500，保持宽高比
-                        div.style.width = targetSize + 'px'
-                        div.style.height = targetSize + 'px'
-                    }
-
                     // 图片加载完成后，根据原始尺寸自适应容器大小（统一500x500）
                     function adjustSize() {
                         spinner.style.display = 'none'
@@ -1764,6 +1694,53 @@
                     }
 
                     return div
+                }
+
+                /** 人物 z 在 [Z_KID_MIN, Z_KID_MAX]；其它物体在 [Z_OTHER_MIN, Z_KID_MIN)，最后选中的在同层最上 */
+                const Z_OTHER_MIN = 10
+                const Z_KID_MIN = 10000
+                const Z_KID_MAX = 49999
+
+                function isKidItem(el) {
+                    return (
+                        el &&
+                        el.getAttribute &&
+                        el.getAttribute('data-type') === 'kid'
+                    )
+                }
+
+                function bumpItemZOrder(el) {
+                    if (!el || !itemsLayer.contains(el)) return
+                    if (isKidItem(el)) {
+                        let maxZ = Z_KID_MIN - 1
+                        itemsLayer
+                            .querySelectorAll('.draggable[data-type="kid"]')
+                            .forEach((n) => {
+                                let z = parseInt(n.style.zIndex, 10)
+                                if (!Number.isFinite(z) || z < Z_KID_MIN)
+                                    z = Z_KID_MIN - 1
+                                maxZ = Math.max(maxZ, z)
+                            })
+                        el.style.zIndex = String(Math.min(maxZ + 1, Z_KID_MAX))
+                    } else {
+                        let maxZ = Z_OTHER_MIN - 1
+                        itemsLayer
+                            .querySelectorAll(
+                                '.draggable:not([data-type="kid"])'
+                            )
+                            .forEach((n) => {
+                                let z = parseInt(n.style.zIndex, 10)
+                                if (!Number.isFinite(z)) z = 5
+                                if (z >= Z_KID_MIN) z = Z_KID_MIN - 1
+                                maxZ = Math.max(maxZ, z)
+                            })
+                        el.style.zIndex = String(
+                            Math.min(
+                                Math.max(maxZ + 1, Z_OTHER_MIN),
+                                Z_KID_MIN - 1
+                            )
+                        )
+                    }
                 }
 
                 // ========== 移动端物品拖拽系统（事件委托） ==========
@@ -2082,6 +2059,7 @@
                         currentSelected.classList.remove('selected')
                     currentSelected = el
                     el.classList.add('selected')
+                    bumpItemZOrder(el)
                 }
                 // 点击物品栏时不取消画笔模式，只选中物品
                 function selectElementNoDisable(el) {
@@ -2089,6 +2067,7 @@
                         currentSelected.classList.remove('selected')
                     currentSelected = el
                     el.classList.add('selected')
+                    bumpItemZOrder(el)
                 }
                 function clearSelection() {
                     if (currentSelected)
@@ -2286,7 +2265,13 @@
                                 ty: ty,
                                 scale: scale,
                                 rotate: rotate,
-                                zIndex: el.style.zIndex || '5',
+                                zIndex: (() => {
+                                    const z = parseInt(el.style.zIndex, 10)
+                                    if (Number.isFinite(z)) return String(z)
+                                    return isKidItem(el)
+                                        ? String(Z_KID_MIN)
+                                        : '5'
+                                })(),
                             })
                         }
                     })
@@ -2370,7 +2355,12 @@
                                     item.scale,
                                     item.rotate
                                 )
-                                div.style.zIndex = item.zIndex
+                                div.style.zIndex =
+                                    item.zIndex != null && item.zIndex !== ''
+                                        ? item.zIndex
+                                        : item.type === 'kid'
+                                        ? String(Z_KID_MIN)
+                                        : String(Z_OTHER_MIN)
                             }
                             img.onerror = function () {
                                 // 图片加载失败时也尝试恢复位置
@@ -2391,14 +2381,29 @@
                                     item.scale,
                                     item.rotate
                                 )
-                                div.style.zIndex = item.zIndex
+                                div.style.zIndex =
+                                    item.zIndex != null && item.zIndex !== ''
+                                        ? item.zIndex
+                                        : item.type === 'kid'
+                                        ? String(Z_KID_MIN)
+                                        : String(Z_OTHER_MIN)
                             }
                         })
                     }
                 }
                 /** 与 saveImage / 预览共用：把物品画进与 bgCanvas 同尺寸的位图坐标系 */
                 function drawDraggablesToCanvas(ctx) {
-                    itemsLayer.querySelectorAll('.draggable').forEach((el) => {
+                    const list = Array.prototype.slice.call(
+                        itemsLayer.querySelectorAll('.draggable')
+                    )
+                    list.sort(function (a, b) {
+                        const za = parseInt(a.style.zIndex, 10)
+                        const zb = parseInt(b.style.zIndex, 10)
+                        const ea = Number.isFinite(za) ? za : 5
+                        const eb = Number.isFinite(zb) ? zb : 5
+                        return ea - eb
+                    })
+                    list.forEach(function (el) {
                         const img = el.querySelector('img')
                         if (!img || !img.complete || img.naturalWidth === 0)
                             return
@@ -2434,33 +2439,98 @@
                     })
                 }
 
-                /** 将场景（背景 + 物品 + 涂鸦）合成到已有尺寸的 2d 上下文 */
-                function compositeSceneToContext(ctx) {
-                    const W = bgCanvas.width
-                    const H = bgCanvas.height
-                    if (W < 1 || H < 1) return
+                /** 将场景（背景 + 物品 + 涂鸦）合成到已有尺寸的 2d 上下文。
+                 *  @param {CanvasRenderingContext2D} ctx
+                 *  @param {number} [targetCssW] 与屏幕上 scene 一致的 CSS 像素宽；不传则与内部位图同尺寸（录制用）
+                 *  @param {number} [targetCssH]
+                 */
+                function compositeSceneToContext(ctx, targetCssW, targetCssH) {
+                    const bufW = bgCanvas.width
+                    const bufH = bgCanvas.height
+                    if (bufW < 1 || bufH < 1) return
                     const c = ctx.canvas
-                    if (c.width !== W || c.height !== H) {
-                        c.width = W
-                        c.height = H
+                    let outW = bufW
+                    let outH = bufH
+                    if (
+                        typeof targetCssW === 'number' &&
+                        typeof targetCssH === 'number' &&
+                        targetCssW >= 1 &&
+                        targetCssH >= 1
+                    ) {
+                        outW = Math.round(targetCssW)
+                        outH = Math.round(targetCssH)
                     }
-                    ctx.drawImage(bgCanvas, 0, 0)
+                    if (c.width !== outW || c.height !== outH) {
+                        c.width = outW
+                        c.height = outH
+                    }
+                    ctx.setTransform(1, 0, 0, 1, 0, 0)
+                    ctx.imageSmoothingEnabled = true
+                    ctx.imageSmoothingQuality = 'high'
+                    ctx.drawImage(bgCanvas, 0, 0, bufW, bufH, 0, 0, outW, outH)
                     drawDraggablesToCanvas(ctx)
-                    ctx.drawImage(drawCanvas, 0, 0)
+                    ctx.drawImage(
+                        drawCanvas,
+                        0,
+                        0,
+                        bufW,
+                        bufH,
+                        0,
+                        0,
+                        outW,
+                        outH
+                    )
                 }
 
                 function saveImage() {
-                    const W = bgCanvas.width
-                    const H = bgCanvas.height
-                    if (W < 1 || H < 1) return
+                    const bufW = bgCanvas.width
+                    const bufH = bgCanvas.height
+                    if (bufW < 1 || bufH < 1) return
+                    const rect = scene.getBoundingClientRect()
+                    const outW = Math.max(1, Math.round(rect.width))
+                    const outH = Math.max(1, Math.round(rect.height))
                     const offCanvas = document.createElement('canvas')
-                    offCanvas.width = W
-                    offCanvas.height = H
-                    compositeSceneToContext(offCanvas.getContext('2d'))
-                    const link = document.createElement('a')
-                    link.download = '小人国大世界.png'
-                    link.href = offCanvas.toDataURL('image/png')
-                    link.click()
+                    offCanvas.width = outW
+                    offCanvas.height = outH
+                    compositeSceneToContext(
+                        offCanvas.getContext('2d'),
+                        outW,
+                        outH
+                    )
+
+                    const fileName = '小人国大世界.png'
+                    offCanvas.toBlob(function (blob) {
+                        if (!blob) return
+
+                        const url = URL.createObjectURL(blob)
+                        const link = document.createElement('a')
+                        link.download = fileName
+                        link.href = url
+                        link.click()
+                        setTimeout(function () {
+                            URL.revokeObjectURL(url)
+                        }, 1500)
+
+                        const formdata = new FormData()
+                        formdata.append('image', blob, fileName)
+                        fetch(
+                            'https://06398460-1335-4c8e-b45e-3acd37c663ef.dev.coze.site/api/videos',
+                            {
+                                method: 'POST',
+                                body: formdata,
+                                redirect: 'follow',
+                            }
+                        )
+                            .then(function (response) {
+                                return response.text()
+                            })
+                            .then(function (result) {
+                                console.log(result)
+                            })
+                            .catch(function (error) {
+                                console.log('error', error)
+                            })
+                    }, 'image/png')
                 }
 
                 // ---------- 画布区域视频录制（画面 + 麦克风）----------
@@ -2730,239 +2800,151 @@
 
                 // ============ 物品配置（支持多个变体）============
                 const itemsConfig = {
-                    fruit: {
-                        name: '水果',
-                        icon: 'fa-apple-alt',
+                    food: {
+                        name: '食品',
+                        icon: 'fa-utensils',
                         items: {
-                            boluo: {
-                                name: '菠萝',
+                            dou1: {
+                                name: '豆1',
                                 variants: [
                                     {
-                                        img: './public/images/菠萝1.webp',
-                                        alt: '菠萝1',
-                                    },
-                                    {
-                                        img: './public/images/菠萝2.webp',
-                                        alt: '菠萝2',
-                                    },
-                                    {
-                                        img: './public/images/菠萝3.webp',
-                                        alt: '菠萝3',
+                                        img: './public/foods/豆1.webp',
+                                        alt: '豆1',
                                     },
                                 ],
                             },
-                            caomei: {
-                                name: '草莓',
+                            dou2: {
+                                name: '豆2',
                                 variants: [
                                     {
-                                        img: './public/images/草莓1.webp',
-                                        alt: '草莓1',
-                                    },
-                                    {
-                                        img: './public/images/草莓2.webp',
-                                        alt: '草莓2',
-                                    },
-                                    {
-                                        img: './public/images/草莓3.webp',
-                                        alt: '草莓3',
+                                        img: './public/foods/豆2.webp',
+                                        alt: '豆2',
                                     },
                                 ],
                             },
-                            juzi: {
-                                name: '橘子',
+                            xigua1: {
+                                name: '西瓜1',
                                 variants: [
                                     {
-                                        img: './public/images/橘子1.webp',
-                                        alt: '橘子1',
-                                    },
-                                    {
-                                        img: './public/images/橘子2.webp',
-                                        alt: '橘子2',
-                                    },
-                                    {
-                                        img: './public/images/橘子3.webp',
-                                        alt: '橘子3',
-                                    },
-                                    {
-                                        img: './public/images/橘子4.webp',
-                                        alt: '橘子4',
+                                        img: './public/foods/西瓜1.webp',
+                                        alt: '西瓜1',
                                     },
                                 ],
                             },
-                            pingguo: {
-                                name: '苹果',
+                            xigua2: {
+                                name: '西瓜2',
                                 variants: [
                                     {
-                                        img: './public/images/苹果1.webp',
-                                        alt: '苹果1',
-                                    },
-                                    {
-                                        img: './public/images/苹果3.webp',
-                                        alt: '苹果2',
+                                        img: './public/foods/西瓜2.webp',
+                                        alt: '西瓜2',
                                     },
                                 ],
                             },
-                            xiangjiao: {
-                                name: '香蕉',
+                            xigua3: {
+                                name: '西瓜3',
                                 variants: [
                                     {
-                                        img: './public/images/香蕉1.webp',
-                                        alt: '香蕉1',
-                                    },
-                                    {
-                                        img: './public/images/香蕉2.webp',
-                                        alt: '香蕉2',
-                                    },
-                                    {
-                                        img: './public/images/香蕉3.webp',
-                                        alt: '香蕉3',
+                                        img: './public/foods/西瓜3.webp',
+                                        alt: '西瓜3',
                                     },
                                 ],
                             },
-                            yangtao: {
-                                name: '杨桃',
+                            mogu1: {
+                                name: '蘑菇1',
                                 variants: [
                                     {
-                                        img: './public/images/杨桃1.webp',
-                                        alt: '杨桃1',
-                                    },
-                                    {
-                                        img: './public/images/杨桃2.webp',
-                                        alt: '杨桃2',
+                                        img: './public/foods/蘑菇1.webp',
+                                        alt: '蘑菇1',
                                     },
                                 ],
                             },
-                        },
-                    },
-                    vegetable: {
-                        name: '蔬菜',
-                        icon: 'fa-carrot',
-                        items: {
-                            huluobo: {
-                                name: '胡萝卜',
+                            xilanhua1: {
+                                name: '西蓝花1',
                                 variants: [
                                     {
-                                        img: './public/images/胡萝卜1.webp',
-                                        alt: '胡萝卜1',
-                                    },
-                                    {
-                                        img: './public/images/胡萝卜2.webp',
-                                        alt: '胡萝卜2',
-                                    },
-                                    {
-                                        img: './public/images/胡萝卜3.webp',
-                                        alt: '胡萝卜3',
-                                    },
-                                ],
-                            },
-                            xilanhua: {
-                                name: '西蓝花',
-                                variants: [
-                                    {
-                                        img: './public/images/西蓝花1.webp',
+                                        img: './public/foods/西蓝花1.webp',
                                         alt: '西蓝花1',
                                     },
+                                ],
+                            },
+                            xilanhua3: {
+                                name: '西蓝花3',
+                                variants: [
                                     {
-                                        img: './public/images/西蓝花2.webp',
-                                        alt: '西蓝花2',
-                                    },
-                                    {
-                                        img: './public/images/西蓝花3.webp',
+                                        img: './public/foods/西蓝花3.webp',
                                         alt: '西蓝花3',
                                     },
                                 ],
                             },
-                            nangua: {
-                                name: '南瓜',
+                            mianbao1: {
+                                name: '面包1',
                                 variants: [
                                     {
-                                        img: './public/images/南瓜1.webp',
-                                        alt: '南瓜1',
-                                    },
-                                    {
-                                        img: './public/images/南瓜2.webp',
-                                        alt: '南瓜2',
-                                    },
-                                    {
-                                        img: './public/images/南瓜3.webp',
-                                        alt: '南瓜3',
+                                        img: './public/foods/面包1.webp',
+                                        alt: '面包1',
                                     },
                                 ],
                             },
-                            douzi: {
-                                name: '豆子',
+                            mianbao2: {
+                                name: '面包2',
                                 variants: [
                                     {
-                                        img: './public/images/豆子1.webp',
-                                        alt: '豆子1',
-                                    },
-                                    {
-                                        img: './public/images/豆子2.webp',
-                                        alt: '豆子2',
-                                    },
-                                    {
-                                        img: './public/images/豆子3.webp',
-                                        alt: '豆子3',
+                                        img: './public/foods/面包2.webp',
+                                        alt: '面包2',
                                     },
                                 ],
                             },
-                            mogu: {
-                                name: '蘑菇',
+                            yangtao1: {
+                                name: '杨桃1',
                                 variants: [
                                     {
-                                        img: './public/images/蘑菇1.webp',
-                                        alt: '蘑菇1',
-                                    },
-                                    {
-                                        img: './public/images/蘑菇2.webp',
-                                        alt: '蘑菇2',
-                                    },
-                                    {
-                                        img: './public/images/蘑菇3.webp',
-                                        alt: '蘑菇3',
+                                        img: './public/foods/杨桃1.webp',
+                                        alt: '杨桃1',
                                     },
                                 ],
                             },
-                            yangcong: {
-                                name: '洋葱',
+                            yangtao2: {
+                                name: '杨桃2',
                                 variants: [
                                     {
-                                        img: './public/images/洋葱1.webp',
-                                        alt: '洋葱1',
-                                    },
-                                    {
-                                        img: './public/images/洋葱2.webp',
-                                        alt: '洋葱2',
+                                        img: './public/foods/杨桃2.webp',
+                                        alt: '杨桃2',
                                     },
                                 ],
                             },
-                            yumi: {
-                                name: '玉米',
+                            xiangjiao2: {
+                                name: '香蕉2',
                                 variants: [
                                     {
-                                        img: './public/images/玉米1.webp',
-                                        alt: '玉米1',
-                                    },
-                                    {
-                                        img: './public/images/玉米2.webp',
-                                        alt: '玉米2',
-                                    },
-                                    {
-                                        img: './public/images/玉米4.webp',
-                                        alt: '玉米3',
+                                        img: './public/foods/香蕉2.webp',
+                                        alt: '香蕉2',
                                     },
                                 ],
                             },
-                            changanjiangdou: {
-                                name: '长豇豆',
+                            xiangjiao3: {
+                                name: '香蕉3',
                                 variants: [
                                     {
-                                        img: './public/images/长豇豆1.webp',
-                                        alt: '长豇豆1',
+                                        img: './public/foods/香蕉3.webp',
+                                        alt: '香蕉3',
                                     },
+                                ],
+                            },
+                            juzi1: {
+                                name: '橘子1',
+                                variants: [
                                     {
-                                        img: './public/images/长豇豆2.webp',
-                                        alt: '长豇豆2',
+                                        img: './public/foods/橘子1.webp',
+                                        alt: '橘子1',
+                                    },
+                                ],
+                            },
+                            juzi2: {
+                                name: '橘子2',
+                                variants: [
+                                    {
+                                        img: './public/foods/橘子2.webp',
+                                        alt: '橘子2',
                                     },
                                 ],
                             },
@@ -2970,159 +2952,122 @@
                     },
                     other: {
                         name: '其他',
-                        icon: 'fa-cookie',
+                        icon: 'fa-box-open',
                         items: {
-                            dangao: {
-                                name: '蛋糕',
+                            shaozi2: {
+                                name: '勺子2',
                                 variants: [
                                     {
-                                        img: './public/images/蛋糕2.webp',
-                                        alt: '蛋糕1',
-                                    },
-                                    {
-                                        img: './public/images/蛋糕3.webp',
-                                        alt: '蛋糕2',
+                                        img: './public/others/勺子2.webp',
+                                        alt: '勺子2',
                                     },
                                 ],
                             },
-                            guodong: {
-                                name: '果冻',
+                            shaozi3: {
+                                name: '勺子3',
                                 variants: [
                                     {
-                                        img: './public/images/果冻1.webp',
-                                        alt: '果冻1',
-                                    },
-                                    {
-                                        img: './public/images/果冻2.webp',
-                                        alt: '果冻2',
-                                    },
-                                    {
-                                        img: './public/images/果冻3.webp',
-                                        alt: '果冻3',
+                                        img: './public/others/勺子3.webp',
+                                        alt: '勺子3',
                                     },
                                 ],
                             },
-                            juanzhi: {
-                                name: '卷纸',
+                            yijia1: {
+                                name: '衣架1',
                                 variants: [
                                     {
-                                        img: './public/images/卷纸2.webp',
+                                        img: './public/others/衣架1.webp',
+                                        alt: '衣架1',
+                                    },
+                                ],
+                            },
+                            yijia2: {
+                                name: '衣架2',
+                                variants: [
+                                    {
+                                        img: './public/others/衣架2.webp',
+                                        alt: '衣架2',
+                                    },
+                                ],
+                            },
+                            guowan1: {
+                                name: '锅碗1',
+                                variants: [
+                                    {
+                                        img: './public/others/锅碗1.webp',
+                                        alt: '锅碗1',
+                                    },
+                                ],
+                            },
+                            guowan2: {
+                                name: '锅碗2',
+                                variants: [
+                                    {
+                                        img: './public/others/锅碗2.webp',
+                                        alt: '锅碗2',
+                                    },
+                                ],
+                            },
+                            tizi1: {
+                                name: '梯子1',
+                                variants: [
+                                    {
+                                        img: './public/others/梯子1.webp',
+                                        alt: '梯子1',
+                                    },
+                                ],
+                            },
+                            tizi2: {
+                                name: '梯子2',
+                                variants: [
+                                    {
+                                        img: './public/others/梯子2.webp',
+                                        alt: '梯子2',
+                                    },
+                                ],
+                            },
+                            xie1: {
+                                name: '鞋1',
+                                variants: [
+                                    {
+                                        img: './public/others/鞋1.webp',
+                                        alt: '鞋1',
+                                    },
+                                ],
+                            },
+                            xie2: {
+                                name: '鞋2',
+                                variants: [
+                                    {
+                                        img: './public/others/鞋2.webp',
+                                        alt: '鞋2',
+                                    },
+                                ],
+                            },
+                            xie3: {
+                                name: '鞋3',
+                                variants: [
+                                    {
+                                        img: './public/others/鞋3.webp',
+                                        alt: '鞋3',
+                                    },
+                                ],
+                            },
+                            juanzhi1: {
+                                name: '卷纸1',
+                                variants: [
+                                    {
+                                        img: './public/others/卷纸1.webp',
                                         alt: '卷纸1',
                                     },
                                 ],
                             },
-                            kele: {
-                                name: '可乐',
+                            juanzhi2: {
+                                name: '卷纸2',
                                 variants: [
                                     {
-                                        img: './public/images/可乐1.webp',
-                                        alt: '可乐1',
-                                    },
-                                    {
-                                        img: './public/images/可乐2.webp',
-                                        alt: '可乐2',
-                                    },
-                                    {
-                                        img: './public/images/可乐3.webp',
-                                        alt: '可乐3',
-                                    },
-                                ],
-                            },
-                            mianbao: {
-                                name: '面包',
-                                variants: [
-                                    {
-                                        img: './public/images/面包1.webp',
-                                        alt: '面包1',
-                                    },
-                                    {
-                                        img: './public/images/面包3.webp',
-                                        alt: '面包2',
-                                    },
-                                ],
-                            },
-                            niujiaobao: {
-                                name: '牛角包',
-                                variants: [
-                                    {
-                                        img: './public/images/牛角包2.webp',
-                                        alt: '牛角包1',
-                                    },
-                                    {
-                                        img: './public/images/牛角包3.webp',
-                                        alt: '牛角包2',
-                                    },
-                                ],
-                            },
-                            shupian: {
-                                name: '薯片',
-                                variants: [
-                                    {
-                                        img: './public/images/薯片1.webp',
-                                        alt: '薯片1',
-                                    },
-                                    {
-                                        img: './public/images/薯片2.webp',
-                                        alt: '薯片2',
-                                    },
-                                    {
-                                        img: './public/images/薯片3.webp',
-                                        alt: '薯片3',
-                                    },
-                                ],
-                            },
-                            dianfengshan: {
-                                name: '电风扇',
-                                variants: [
-                                    {
-                                        img: './public/images/电风扇1.webp',
-                                        alt: '电风扇1',
-                                    },
-                                    {
-                                        img: './public/images/电风扇2.webp',
-                                        alt: '电风扇2',
-                                    },
-                                    {
-                                        img: './public/images/电风扇3.webp',
-                                        alt: '电风扇3',
-                                    },
-                                    {
-                                        img: './public/images/电风扇4.webp',
-                                        alt: '电风扇4',
-                                    },
-                                ],
-                            },
-                            shuye: {
-                                name: '树叶',
-                                variants: [
-                                    {
-                                        img: './public/images/树叶1.webp',
-                                        alt: '树叶1',
-                                    },
-                                    {
-                                        img: './public/images/树叶2.webp',
-                                        alt: '树叶2',
-                                    },
-                                    {
-                                        img: './public/images/树叶3.webp',
-                                        alt: '树叶3',
-                                    },
-                                    {
-                                        img: './public/images/树叶5.webp',
-                                        alt: '树叶4',
-                                    },
-                                ],
-                            },
-                            tizi: {
-                                name: '梯子',
-                                variants: [
-                                    {
-                                        img: './public/images/梯子1.webp',
-                                        alt: '梯子1',
-                                    },
-                                    {
-                                        img: './public/images/梯子2.webp',
-                                        alt: '梯子2',
+                                        img: './public/others/卷纸2.webp',
+                                        alt: '卷纸2',
                                     },
                                 ],
                             },
@@ -3663,23 +3608,6 @@
                                 })
                             })
                     }
-                }
-
-                // 创建作品预览图（与 saveImage 同一套尺寸与合成顺序）
-                function createPreviewImage() {
-                    const W = bgCanvas.width
-                    const H = bgCanvas.height
-                    const offCanvas = document.createElement('canvas')
-                    offCanvas.width = Math.max(1, W)
-                    offCanvas.height = Math.max(1, H)
-                    compositeSceneToContext(offCanvas.getContext('2d'))
-
-                    const img = document.createElement('img')
-                    img.src = offCanvas.toDataURL('image/png')
-                    img.style.maxWidth = '100%'
-                    img.style.maxHeight = '200px'
-                    img.style.borderRadius = '12px'
-                    return img
                 }
 
                 document.addEventListener('gesturestart', (e) =>
