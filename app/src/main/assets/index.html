@@ -553,9 +553,25 @@
                 -webkit-backface-visibility: hidden;
                 backface-visibility: hidden;
             }
+            /* 选中描边：drop-shadow 沿子元素（含透明底图）的非透明边缘，而非整块 300×300 矩形 */
             .draggable.selected {
-                outline: 3px solid #ff69b4;
-                outline-offset: 4px;
+                outline: none;
+                filter: drop-shadow(1px 0 0 #ff1493)
+                    drop-shadow(-1px 0 0 #ff1493) drop-shadow(0 1px 0 #ff1493)
+                    drop-shadow(0 -1px 0 #ff1493) drop-shadow(1px 1px 0 #ff1493)
+                    drop-shadow(-1px 1px 0 #ff1493)
+                    drop-shadow(1px -1px 0 #ff1493)
+                    drop-shadow(-1px -1px 0 #ff1493)
+                    drop-shadow(0 4px 8px rgba(255, 105, 180, 0.22));
+            }
+            .draggable[data-type='kid'].selected {
+                filter: drop-shadow(1px 0 0 #ff1493)
+                    drop-shadow(-1px 0 0 #ff1493) drop-shadow(0 1px 0 #ff1493)
+                    drop-shadow(0 -1px 0 #ff1493) drop-shadow(1px 1px 0 #ff1493)
+                    drop-shadow(-1px 1px 0 #ff1493)
+                    drop-shadow(1px -1px 0 #ff1493)
+                    drop-shadow(-1px -1px 0 #ff1493)
+                    drop-shadow(0 2px 8px rgba(255, 105, 180, 0.22));
             }
             .img-spinner {
                 position: absolute;
@@ -1156,6 +1172,7 @@
                                 width="48"
                                 height="48"
                                 decoding="async"
+                                loading="lazy"
                             />
                         </button>
                         <button
@@ -1170,6 +1187,7 @@
                                 width="48"
                                 height="48"
                                 decoding="async"
+                                loading="lazy"
                             />
                         </button>
                         <button
@@ -1184,6 +1202,7 @@
                                 width="48"
                                 height="48"
                                 decoding="async"
+                                loading="lazy"
                             />
                         </button>
                         <button
@@ -1198,6 +1217,7 @@
                                 width="48"
                                 height="48"
                                 decoding="async"
+                                loading="lazy"
                             />
                         </button>
                     </div>
@@ -1293,13 +1313,18 @@
                 }
 
                 // ========== 初始化 ==========
-                window.addEventListener('load', function () {
+                function onAppReady() {
                     preloadBgImages()
                     renderItemsPanel()
                     setBackground('cream')
                     resizeCanvas()
                     bindUI()
-                })
+                }
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', onAppReady)
+                } else {
+                    onAppReady()
+                }
 
                 // 绘制背景 - 手绘纸张效果
                 const bgImageCache = {}
@@ -1430,11 +1455,17 @@
                         })
                 }
 
-                function resizeCanvas() {
-                    const rect = scene.getBoundingClientRect()
+                /** 场景内容区 CSS 尺寸：与绝对定位子节点、笔迹命中一致（不含 #scene 边框） */
+                function getSceneLayoutCssSize() {
+                    return {
+                        w: Math.max(1, Math.round(scene.clientWidth)),
+                        h: Math.max(1, Math.round(scene.clientHeight)),
+                    }
+                }
 
-                    const cssWidth = Math.max(1, Math.round(rect.width))
-                    const cssHeight = Math.max(1, Math.round(rect.height))
+                function resizeCanvas() {
+                    const { w: cssWidth, h: cssHeight } =
+                        getSceneLayoutCssSize()
 
                     // 高清屏 DPR
                     const dpr = window.devicePixelRatio || 1
@@ -1564,8 +1595,8 @@
                     const now = Date.now()
                     // 每100ms更新一次边界缓存
                     if (now - lastBoundsUpdate > 100) {
-                        const rect = scene.getBoundingClientRect()
-                        sceneBounds = { width: rect.width, height: rect.height }
+                        const s = getSceneLayoutCssSize()
+                        sceneBounds = { width: s.w, height: s.h }
                         lastBoundsUpdate = now
                     }
                     const w = el.offsetWidth,
@@ -1645,11 +1676,9 @@
                         if (type === 'kid') {
                             applyKidDisplaySize(div, img)
                             requestAnimationFrame(() => {
-                                const rect = scene.getBoundingClientRect()
-                                const centerX =
-                                    (rect.width - div.offsetWidth) / 2
-                                const centerY =
-                                    (rect.height - div.offsetHeight) / 2
+                                const { w: sw, h: sh } = getSceneLayoutCssSize()
+                                const centerX = (sw - div.offsetWidth) / 2
+                                const centerY = (sh - div.offsetHeight) / 2
                                 const pos = clampPosition(div, centerX, centerY)
                                 setTransform(div, pos.x, pos.y, 1.0, 0)
                             })
@@ -1663,9 +1692,9 @@
                             div.style.height = targetSize + 'px'
                         }
                         requestAnimationFrame(() => {
-                            const rect = scene.getBoundingClientRect()
-                            const centerX = (rect.width - div.offsetWidth) / 2
-                            const centerY = (rect.height - div.offsetHeight) / 2
+                            const { w: sw, h: sh } = getSceneLayoutCssSize()
+                            const centerX = (sw - div.offsetWidth) / 2
+                            const centerY = (sh - div.offsetHeight) / 2
                             const pos = clampPosition(div, centerX, centerY)
                             setTransform(div, pos.x, pos.y, 1.0, 0)
                         })
@@ -1677,9 +1706,9 @@
                         img.onerror = adjustSize
                     }
 
-                    const rect = scene.getBoundingClientRect()
-                    const centerX = (rect.width - div.offsetWidth) / 2
-                    const centerY = (rect.height - div.offsetHeight) / 2
+                    const { w: sw, h: sh } = getSceneLayoutCssSize()
+                    const centerX = (sw - div.offsetWidth) / 2
+                    const centerY = (sh - div.offsetHeight) / 2
                     const pos = clampPosition(div, centerX, centerY)
                     setTransform(div, pos.x, pos.y, 1.0, 0)
 
@@ -2093,10 +2122,9 @@
                     ctx.clearRect(0, 0, drawCanvas.width, drawCanvas.height)
                 }
 
-                function disableAllModes() {
-                    clearSelection() // 取消物品选择
-                    drawingEnabled = eraserEnabled = false
-                    closeAllDropdowns()
+                function disableBrushAndEraser() {
+                    drawingEnabled = false
+                    eraserEnabled = false
                     drawCanvas.classList.remove('drawing-mode')
                     document
                         .getElementById('brushBtn')
@@ -2106,6 +2134,12 @@
                         .classList.remove('active')
                     updateInteractionLock()
                     updateCursor()
+                }
+
+                function disableAllModes() {
+                    clearSelection() // 取消物品选择
+                    closeAllDropdowns()
+                    disableBrushAndEraser()
                 }
 
                 function closeAllDropdowns() {
@@ -2441,7 +2475,7 @@
 
                 /** 将场景（背景 + 物品 + 涂鸦）合成到已有尺寸的 2d 上下文。
                  *  @param {CanvasRenderingContext2D} ctx
-                 *  @param {number} [targetCssW] 与屏幕上 scene 一致的 CSS 像素宽；不传则与内部位图同尺寸（录制用）
+                 *  @param {number} [targetCssW] 与 getSceneLayoutCssSize() 一致的 CSS 像素宽；不传则与内部位图同尺寸
                  *  @param {number} [targetCssH]
                  */
                 function compositeSceneToContext(ctx, targetCssW, targetCssH) {
@@ -2486,9 +2520,7 @@
                     const bufW = bgCanvas.width
                     const bufH = bgCanvas.height
                     if (bufW < 1 || bufH < 1) return
-                    const rect = scene.getBoundingClientRect()
-                    const outW = Math.max(1, Math.round(rect.width))
-                    const outH = Math.max(1, Math.round(rect.height))
+                    const { w: outW, h: outH } = getSceneLayoutCssSize()
                     const offCanvas = document.createElement('canvas')
                     offCanvas.width = outW
                     offCanvas.height = outH
@@ -2595,7 +2627,8 @@
 
                 function recordFrameLoop() {
                     if (!recordActive || !recordCtx) return
-                    compositeSceneToContext(recordCtx)
+                    const { w, h } = getSceneLayoutCssSize()
+                    compositeSceneToContext(recordCtx, w, h)
                     recordRafId = requestAnimationFrame(recordFrameLoop)
                 }
 
@@ -2670,9 +2703,9 @@
                         alert('当前浏览器不支持视频录制（MediaRecorder）。')
                         return
                     }
-                    const W = bgCanvas.width
-                    const H = bgCanvas.height
-                    if (W < 1 || H < 1) return
+                    const bufW = bgCanvas.width
+                    const bufH = bgCanvas.height
+                    if (bufW < 1 || bufH < 1) return
 
                     let micStream = null
                     try {
@@ -2689,9 +2722,10 @@
                     }
 
                     ensureRecordCanvas()
-                    recordCanvas.width = W
-                    recordCanvas.height = H
-                    compositeSceneToContext(recordCtx)
+                    const { w: rw, h: rh } = getSceneLayoutCssSize()
+                    recordCanvas.width = rw
+                    recordCanvas.height = rh
+                    compositeSceneToContext(recordCtx, rw, rh)
 
                     let videoStream = null
                     try {
@@ -2774,28 +2808,71 @@
                     }
                 }
 
-                function buildKidsCategoryItems() {
-                    const folders = [
-                        1, 3, 4, 6, 8, 9, 11, 12, 13, 14, 15, 16, 17, 18, 19,
-                        20, 21, 22, 24, 25, 26, 27,
-                    ]
+                function buildCategoryItemsFromFiles(subdir, keyPrefix, files) {
                     const items = {}
-                    for (const id of folders) {
-                        const key = 'child_' + id
-                        const count = id === 27 ? 4 : 5
-                        const variants = []
-                        for (let i = 1; i <= count; i++) {
-                            variants.push({
-                                img: `./public/child/${id}/${i}.webp`,
-                                alt: String(i),
-                            })
-                        }
-                        items[key] = {
-                            name: '儿童 ' + id,
-                            variants: variants,
+                    for (const file of files) {
+                        const name = file.replace(/\.webp$/i, '')
+                        items[keyPrefix + '_' + name] = {
+                            name: name,
+                            variants: [
+                                {
+                                    img: `./public/${subdir}/${file}`,
+                                    alt: name,
+                                },
+                            ],
                         }
                     }
                     return items
+                }
+
+                function buildFoodCategoryItems() {
+                    return buildCategoryItemsFromFiles('foods', 'food', [
+                        '豆1.webp',
+                        '豆2.webp',
+                        '西瓜1.webp',
+                        '西瓜2.webp',
+                        '西瓜3.webp',
+                        '蘑菇1.webp',
+                        '西蓝花1.webp',
+                        '西蓝花3.webp',
+                        '面包1.webp',
+                        '面包2.webp',
+                        '杨桃1.webp',
+                        '杨桃2.webp',
+                        '香蕉2.webp',
+                        '香蕉3.webp',
+                        '橘子1.webp',
+                        '橘子2.webp',
+                    ])
+                }
+
+                function buildOtherCategoryItems() {
+                    return buildCategoryItemsFromFiles('others', 'other', [
+                        '勺子2.webp',
+                        '勺子3.webp',
+                        '衣架1.webp',
+                        '衣架2.webp',
+                        '锅碗1.webp',
+                        '锅碗2.webp',
+                        '梯子1.webp',
+                        '梯子2.webp',
+                        '鞋1.webp',
+                        '鞋2.webp',
+                        '鞋3.webp',
+                        '卷纸1.webp',
+                        '卷纸2.webp',
+                    ])
+                }
+
+                function buildKidsCategoryItems() {
+                    return buildCategoryItemsFromFiles('child', 'child', [
+                        '3.webp',
+                        '图片1.webp',
+                        '图片3.webp',
+                        '图片5.webp',
+                        '图片1555.webp',
+                        '图片1653.webp',
+                    ])
                 }
 
                 // ============ 物品配置（支持多个变体）============
@@ -2803,275 +2880,12 @@
                     food: {
                         name: '食品',
                         icon: 'fa-utensils',
-                        items: {
-                            dou1: {
-                                name: '豆1',
-                                variants: [
-                                    {
-                                        img: './public/foods/豆1.webp',
-                                        alt: '豆1',
-                                    },
-                                ],
-                            },
-                            dou2: {
-                                name: '豆2',
-                                variants: [
-                                    {
-                                        img: './public/foods/豆2.webp',
-                                        alt: '豆2',
-                                    },
-                                ],
-                            },
-                            xigua1: {
-                                name: '西瓜1',
-                                variants: [
-                                    {
-                                        img: './public/foods/西瓜1.webp',
-                                        alt: '西瓜1',
-                                    },
-                                ],
-                            },
-                            xigua2: {
-                                name: '西瓜2',
-                                variants: [
-                                    {
-                                        img: './public/foods/西瓜2.webp',
-                                        alt: '西瓜2',
-                                    },
-                                ],
-                            },
-                            xigua3: {
-                                name: '西瓜3',
-                                variants: [
-                                    {
-                                        img: './public/foods/西瓜3.webp',
-                                        alt: '西瓜3',
-                                    },
-                                ],
-                            },
-                            mogu1: {
-                                name: '蘑菇1',
-                                variants: [
-                                    {
-                                        img: './public/foods/蘑菇1.webp',
-                                        alt: '蘑菇1',
-                                    },
-                                ],
-                            },
-                            xilanhua1: {
-                                name: '西蓝花1',
-                                variants: [
-                                    {
-                                        img: './public/foods/西蓝花1.webp',
-                                        alt: '西蓝花1',
-                                    },
-                                ],
-                            },
-                            xilanhua3: {
-                                name: '西蓝花3',
-                                variants: [
-                                    {
-                                        img: './public/foods/西蓝花3.webp',
-                                        alt: '西蓝花3',
-                                    },
-                                ],
-                            },
-                            mianbao1: {
-                                name: '面包1',
-                                variants: [
-                                    {
-                                        img: './public/foods/面包1.webp',
-                                        alt: '面包1',
-                                    },
-                                ],
-                            },
-                            mianbao2: {
-                                name: '面包2',
-                                variants: [
-                                    {
-                                        img: './public/foods/面包2.webp',
-                                        alt: '面包2',
-                                    },
-                                ],
-                            },
-                            yangtao1: {
-                                name: '杨桃1',
-                                variants: [
-                                    {
-                                        img: './public/foods/杨桃1.webp',
-                                        alt: '杨桃1',
-                                    },
-                                ],
-                            },
-                            yangtao2: {
-                                name: '杨桃2',
-                                variants: [
-                                    {
-                                        img: './public/foods/杨桃2.webp',
-                                        alt: '杨桃2',
-                                    },
-                                ],
-                            },
-                            xiangjiao2: {
-                                name: '香蕉2',
-                                variants: [
-                                    {
-                                        img: './public/foods/香蕉2.webp',
-                                        alt: '香蕉2',
-                                    },
-                                ],
-                            },
-                            xiangjiao3: {
-                                name: '香蕉3',
-                                variants: [
-                                    {
-                                        img: './public/foods/香蕉3.webp',
-                                        alt: '香蕉3',
-                                    },
-                                ],
-                            },
-                            juzi1: {
-                                name: '橘子1',
-                                variants: [
-                                    {
-                                        img: './public/foods/橘子1.webp',
-                                        alt: '橘子1',
-                                    },
-                                ],
-                            },
-                            juzi2: {
-                                name: '橘子2',
-                                variants: [
-                                    {
-                                        img: './public/foods/橘子2.webp',
-                                        alt: '橘子2',
-                                    },
-                                ],
-                            },
-                        },
+                        items: buildFoodCategoryItems(),
                     },
                     other: {
                         name: '其他',
                         icon: 'fa-box-open',
-                        items: {
-                            shaozi2: {
-                                name: '勺子2',
-                                variants: [
-                                    {
-                                        img: './public/others/勺子2.webp',
-                                        alt: '勺子2',
-                                    },
-                                ],
-                            },
-                            shaozi3: {
-                                name: '勺子3',
-                                variants: [
-                                    {
-                                        img: './public/others/勺子3.webp',
-                                        alt: '勺子3',
-                                    },
-                                ],
-                            },
-                            yijia1: {
-                                name: '衣架1',
-                                variants: [
-                                    {
-                                        img: './public/others/衣架1.webp',
-                                        alt: '衣架1',
-                                    },
-                                ],
-                            },
-                            yijia2: {
-                                name: '衣架2',
-                                variants: [
-                                    {
-                                        img: './public/others/衣架2.webp',
-                                        alt: '衣架2',
-                                    },
-                                ],
-                            },
-                            guowan1: {
-                                name: '锅碗1',
-                                variants: [
-                                    {
-                                        img: './public/others/锅碗1.webp',
-                                        alt: '锅碗1',
-                                    },
-                                ],
-                            },
-                            guowan2: {
-                                name: '锅碗2',
-                                variants: [
-                                    {
-                                        img: './public/others/锅碗2.webp',
-                                        alt: '锅碗2',
-                                    },
-                                ],
-                            },
-                            tizi1: {
-                                name: '梯子1',
-                                variants: [
-                                    {
-                                        img: './public/others/梯子1.webp',
-                                        alt: '梯子1',
-                                    },
-                                ],
-                            },
-                            tizi2: {
-                                name: '梯子2',
-                                variants: [
-                                    {
-                                        img: './public/others/梯子2.webp',
-                                        alt: '梯子2',
-                                    },
-                                ],
-                            },
-                            xie1: {
-                                name: '鞋1',
-                                variants: [
-                                    {
-                                        img: './public/others/鞋1.webp',
-                                        alt: '鞋1',
-                                    },
-                                ],
-                            },
-                            xie2: {
-                                name: '鞋2',
-                                variants: [
-                                    {
-                                        img: './public/others/鞋2.webp',
-                                        alt: '鞋2',
-                                    },
-                                ],
-                            },
-                            xie3: {
-                                name: '鞋3',
-                                variants: [
-                                    {
-                                        img: './public/others/鞋3.webp',
-                                        alt: '鞋3',
-                                    },
-                                ],
-                            },
-                            juanzhi1: {
-                                name: '卷纸1',
-                                variants: [
-                                    {
-                                        img: './public/others/卷纸1.webp',
-                                        alt: '卷纸1',
-                                    },
-                                ],
-                            },
-                            juanzhi2: {
-                                name: '卷纸2',
-                                variants: [
-                                    {
-                                        img: './public/others/卷纸2.webp',
-                                        alt: '卷纸2',
-                                    },
-                                ],
-                            },
-                        },
+                        items: buildOtherCategoryItems(),
                     },
                     kids: {
                         name: '儿童',
@@ -3085,31 +2899,103 @@
                     Object.keys(itemsConfig).map((k) => [k, true])
                 )
 
-                // 初始化背景选择器
+                const thumbImageCache = Object.create(null)
+                let thumbLoadsActive = 0
+                const THUMB_LOAD_MAX = 12
+                const thumbLoadWaiters = []
+                let sidebarThumbObserver = null
 
-                // 动态渲染物品栏
-                function hydrateCategoryThumbs(itemsEl) {
-                    if (!itemsEl || itemsEl.dataset.thumbsReady === '1') return
-                    const imgs = itemsEl.querySelectorAll('img[data-thumb]')
-                    if (imgs.length === 0) {
-                        itemsEl.dataset.thumbsReady = '1'
-                        return
+                function drainThumbLoadQueue() {
+                    while (
+                        thumbLoadsActive < THUMB_LOAD_MAX &&
+                        thumbLoadWaiters.length
+                    ) {
+                        thumbLoadWaiters.shift()()
                     }
-                    const list = Array.prototype.slice.call(imgs)
-                    let i = 0
-                    const CHUNK = 6
-                    function step() {
-                        const end = Math.min(i + CHUNK, list.length)
-                        for (; i < end; i++) {
-                            const img = list[i]
-                            const u = img.getAttribute('data-thumb')
-                            if (u) img.src = u
-                            img.removeAttribute('data-thumb')
+                }
+
+                function loadThumbImage(url) {
+                    if (thumbImageCache[url]) return thumbImageCache[url]
+                    thumbImageCache[url] = new Promise(function (
+                        resolve,
+                        reject
+                    ) {
+                        function start() {
+                            thumbLoadsActive++
+                            const image = new Image()
+                            image.decoding = 'async'
+                            image.onload = function () {
+                                thumbLoadsActive--
+                                drainThumbLoadQueue()
+                                resolve(image)
+                            }
+                            image.onerror = function () {
+                                thumbLoadsActive--
+                                drainThumbLoadQueue()
+                                reject(new Error('thumb load failed'))
+                            }
+                            image.src = url
                         }
-                        if (i < list.length) requestAnimationFrame(step)
-                        else itemsEl.dataset.thumbsReady = '1'
+                        if (thumbLoadsActive < THUMB_LOAD_MAX) start()
+                        else thumbLoadWaiters.push(start)
+                    })
+                    return thumbImageCache[url]
+                }
+
+                function applyThumbToImg(img, url) {
+                    loadThumbImage(url)
+                        .then(function () {
+                            if (img.isConnected) img.src = url
+                        })
+                        .catch(function () {
+                            if (img.isConnected) img.src = url
+                        })
+                }
+
+                function observeSidebarThumb(img) {
+                    const url = img.getAttribute('data-thumb')
+                    if (!url) return
+                    if (!sidebarThumbObserver) {
+                        const root = document.querySelector('.toolbar-left')
+                        sidebarThumbObserver = new IntersectionObserver(
+                            function (entries) {
+                                entries.forEach(function (entry) {
+                                    if (!entry.isIntersecting) return
+                                    const el = entry.target
+                                    sidebarThumbObserver.unobserve(el)
+                                    const u = el.getAttribute('data-thumb')
+                                    if (!u) return
+                                    el.removeAttribute('data-thumb')
+                                    applyThumbToImg(el, u)
+                                })
+                            },
+                            {
+                                root: root,
+                                rootMargin: '120px 0px',
+                                threshold: 0.01,
+                            }
+                        )
                     }
-                    requestAnimationFrame(step)
+                    sidebarThumbObserver.observe(img)
+                }
+
+                function hydrateCategoryThumbs(itemsEl) {
+                    if (!itemsEl) return
+                    itemsEl
+                        .querySelectorAll('img[data-thumb]')
+                        .forEach(observeSidebarThumb)
+                }
+
+                function hydrateVariantThumbs(container) {
+                    if (!container) return
+                    container
+                        .querySelectorAll('img[data-thumb]')
+                        .forEach(function (img) {
+                            const u = img.getAttribute('data-thumb')
+                            if (!u) return
+                            img.removeAttribute('data-thumb')
+                            applyThumbToImg(img, u)
+                        })
                 }
 
                 function renderItemsPanel() {
@@ -3123,8 +3009,10 @@
                         const categoryDiv = document.createElement('div')
                         categoryDiv.className = 'category'
 
+                        const expanded = categoryExpanded[category]
                         const titleDiv = document.createElement('div')
-                        titleDiv.className = 'category-title expanded'
+                        titleDiv.className =
+                            'category-title' + (expanded ? ' expanded' : '')
                         titleDiv.innerHTML = `<i class="fas ${data.icon}"></i> ${data.name}<i class="fas fa-chevron-down collapse-icon"></i>`
                         titleDiv.dataset.category = category
 
@@ -3137,7 +3025,8 @@
                         categoryDiv.appendChild(titleDiv)
 
                         const itemsDiv = document.createElement('div')
-                        itemsDiv.className = 'category-items show'
+                        itemsDiv.className =
+                            'category-items' + (expanded ? ' show' : '')
                         itemsDiv.id = `cat-${category}`
 
                         // 渲染物品按钮
@@ -3154,6 +3043,8 @@
                             // 点击展开变体选择
                             btn.addEventListener('click', (e) => {
                                 e.stopPropagation()
+                                disableBrushAndEraser()
+                                closeAllDropdowns()
                                 toggleVariants(category, type)
                             })
 
@@ -3162,9 +3053,7 @@
 
                         categoryDiv.appendChild(itemsDiv)
                         container.appendChild(categoryDiv)
-                        requestAnimationFrame(function () {
-                            hydrateCategoryThumbs(itemsDiv)
-                        })
+                        if (expanded) hydrateCategoryThumbs(itemsDiv)
                     }
                 }
 
@@ -3227,7 +3116,7 @@
                     itemsData.variants.forEach((variant, index) => {
                         const btn = document.createElement('button')
                         btn.className = 'variant-btn'
-                        btn.innerHTML = `<img src="${variant.img}" alt="${variant.alt}">`
+                        btn.innerHTML = `<img src="${THUMB_PLACEHOLDER}" data-thumb="${variant.img}" alt="${variant.alt}" width="48" height="48" decoding="async">`
                         btn.addEventListener('click', (e) => {
                             e.stopPropagation()
                             addItemToCanvas(category, type, index)
@@ -3238,6 +3127,7 @@
 
                     panel.appendChild(grid)
                     document.body.appendChild(panel)
+                    hydrateVariantThumbs(panel)
 
                     // 定位在点击的物品按钮旁边（带边界检测）
                     const btn = document.querySelector(
@@ -3311,16 +3201,8 @@
 
                 // 添加物品到画布
                 function addItemToCanvas(category, type, variantIndex) {
-                    // 取消画笔/橡皮擦激活状态
-                    drawingEnabled = false
-                    eraserEnabled = false
                     closeAllDropdowns()
-                    document
-                        .getElementById('brushBtn')
-                        .classList.remove('active')
-                    document
-                        .getElementById('eraserBtn')
-                        .classList.remove('active')
+                    disableBrushAndEraser()
                     const itemsData = itemsConfig[category]?.items[type]
                     if (!itemsData) return
 
@@ -3333,12 +3215,8 @@
                         variant.img,
                         variantIndex
                     )
-                    const rect = scene.getBoundingClientRect()
-                    const pos = clampPosition(
-                        newItem,
-                        rect.width / 2 - 45,
-                        rect.height / 2 - 45
-                    )
+                    const { w, h } = getSceneLayoutCssSize()
+                    const pos = clampPosition(newItem, w / 2 - 45, h / 2 - 45)
                     setTransform(newItem, pos.x, pos.y, 1.0, 0)
                     selectElementNoDisable(newItem)
                 }
